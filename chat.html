@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chat</title>
+    <link href="local/bootstrap.min.css" rel="stylesheet">
+    <link href="local/sticky-footer.css" rel="stylesheet">
+    <style>
+      .bot-text {margin:10px;width:80%;padding:20px;background-color:#dee}
+      .my-text  {margin:10px;width:80%;padding:20px;background-color:#eed}
+    </style>
+  </head>
+  <body>
+    <h1 class="text-center">Contact Info</h1>
+    <div id="main" class="container">
+      <template id="template-bot" style="display:none;">
+        <div id="bot-said{uniqid}" class="row has-warning">
+          <div class="jumbotron pull-left bot-text">{message}</div>
+        </div>
+      </template>
+      <template id="template-my" style="display:none;">
+        <div id="i-said{uniqid}" class="row has-success">
+          <div class="jumbotron pull-right my-text">{message}</div>
+        </div>
+      </template>
+      <div id="end"></div>
+    </div><!--End container-->
+
+      <footer class="footer">
+          <div class="container">
+              <input type="text" id="self-text" class="my-text form-control pull-left" placeholder="Say something">
+          </div>
+        </footer>
+    
+
+    <script src="local/jquery-2.1.3.min.js"></script>
+    <script src="local/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(()=>{
+          var ws = new WebSocket('ws://localhost:8080/');
+          ws.onopen = function() {
+            //console.log('CONNECT');
+          };
+          ws.onclose = function() {
+            //console.log('DISCONNECT');
+          };
+          ws.onmessage = function(event) {
+            handle_server_message(event.data)
+          };
+          function go_to_footer() {
+            $('#self-text').focus()
+            $('html, body').animate({
+                scrollTop: $("#self-text").offset().top
+            }, 250);
+          }
+          function handle_server_message(inbound_message) {
+            //console.log('MESSAGE: '+inbound_message)
+            var new_elem = $('#template-bot').html()
+                .replace('{uniqid}', Math.random())
+                .replace('{message}', inbound_message)
+              $('#main').append(new_elem)
+              go_to_footer()
+          }
+          function handle_enter(event) {
+            outbound_message = event.currentTarget.value
+            //console.log(outbound_message)
+            if(event.which == 13) { 
+              ws.send(outbound_message)
+              var new_elem = $('#template-my').html()
+                .replace('{uniqid}', Math.random())
+                .replace('{message}', outbound_message)
+              $('#main').append(new_elem)
+              $('#self-text').val('')
+              go_to_footer()
+            }
+          }
+          $('#self-text').on('keydown', handle_enter)
+      })
+    </script>
+  </body>
+</html>
